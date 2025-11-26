@@ -2,13 +2,11 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sana Özel Buket</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Sana Özel Buket</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            /* Romantik, hafif morumsu bir siyah */
             background: radial-gradient(circle at center bottom, #2a1f2d 0%, #0f0f1a 100%);
             font-family: 'Courier New', Courier, monospace;
             color: #fff;
@@ -28,33 +26,36 @@
 
         #message-box {
             z-index: 10;
-            margin-top: 10vh;
+            /* Mobilde daha yukarıda dursun diye 5vh yaptık */
+            margin-top: 5vh; 
             text-align: center;
             pointer-events: none;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 20px;
+            background: rgba(0, 0, 0, 0.3); /* Biraz daha şeffaf */
+            padding: 15px 25px;
             border-radius: 15px;
             backdrop-filter: blur(4px);
             border: 1px solid rgba(255, 105, 180, 0.2);
             animation: slideDown 1.5s ease-out;
+            max-width: 90%; /* Mobilde kenarlara yapışmasın */
         }
 
         h1 {
             color: #ff69b4;
-            font-size: 2rem;
+            font-size: 1.8rem; /* Mobilde çok büyük olmasın */
             margin: 0;
             text-shadow: 0 0 15px rgba(255, 105, 180, 0.6);
+            line-height: 1.2;
         }
 
         .typewriter {
             overflow: hidden; 
             white-space: nowrap; 
-            margin: 0 auto;
-            letter-spacing: .15em; 
+            margin: 5px auto 0; /* Üstten az boşluk */
+            letter-spacing: .10em; 
             animation: typing 3.5s steps(40, end);
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: #ddd;
-            border-right: .15em solid orange; /* İmleç efekti */
+            border-right: .15em solid orange;
         }
         
         @keyframes typing {
@@ -65,6 +66,13 @@
         @keyframes slideDown {
             from { transform: translateY(-50px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Küçük ekranlar (Mobil) için özel ayarlar */
+        @media screen and (max-width: 600px) {
+            h1 { font-size: 1.5rem; }
+            #message-box { margin-top: 8vh; padding: 10px 20px; }
+            .typewriter { font-size: 0.8rem; letter-spacing: 0.05em; }
         }
 
     </style>
@@ -86,8 +94,6 @@
 
         let width, height;
         let stems = [];
-        const centerX = window.innerWidth / 2;
-        const rootY = window.innerHeight; // Ekranın en altı
 
         function resize() {
             width = window.innerWidth;
@@ -103,49 +109,51 @@
                 this.rootX = width / 2;
                 this.rootY = height;
                 
-                // Hedef Noktası Hesabı (Polar Koordinatlar)
-                // Açıyı radyana çeviriyoruz. -90 derece tam yukarıdır.
-                // Buket yelpaze gibi açılmalı (-140 ile -40 derece arası gibi)
+                // --- MOBİL AYARI ---
+                // Ekran genişliği 600px'den küçükse mobil kabul et
+                const isMobile = width < 600;
+
                 const rad = angle * (Math.PI / 180);
                 
-                // Hedef uzunluk (ekran yüksekliğine oranla)
-                this.targetLength = (height * 0.4) + (lengthScale * (height * 0.3));
+                // Masaüstünde ekranın %40'ı, Mobilde %30'u baz alınsın.
+                // Üzerine eklenen rastgelelik de mobilde daha az olsun.
+                const baseHeightRatio = isMobile ? 0.35 : 0.45; 
+                const varHeightRatio = isMobile ? 0.20 : 0.30;
+
+                this.targetLength = (height * baseHeightRatio) + (lengthScale * (height * varHeightRatio));
                 
-                // Hedef X ve Y koordinatları (Trigonometri)
                 this.targetX = this.rootX + Math.cos(rad) * this.targetLength;
                 this.targetY = this.rootY + Math.sin(rad) * this.targetLength;
 
-                // Büyüme değişkenleri
-                this.progress = 0; // 0 ile 1 arası (Sap büyümesi)
+                this.progress = 0; 
                 this.growthSpeed = 0.005 + Math.random() * 0.005;
-                this.delay = delay; // Her çiçek aynı anda başlamasın, sırayla çıksın
+                this.delay = delay; 
                 this.started = false;
 
-                // Çiçek Başı
                 this.bloomRadius = 0;
-                this.maxBloomRadius = 30 + Math.random() * 40;
+                // Mobilde çiçek başları çok devasa olup birbirine girmesin
+                const maxRBase = isMobile ? 20 : 30;
+                const maxRVar = isMobile ? 25 : 40;
+                this.maxBloomRadius = maxRBase + Math.random() * maxRVar;
+                
                 this.isBlooming = false;
                 
-                // Görünüm
-                this.thickness = 2 + Math.random() * 3;
+                this.thickness = (isMobile ? 1.5 : 2) + Math.random() * 3;
                 this.stemColor = `hsl(${100 + Math.random()*30}, 60%, ${20 + Math.random()*20}%)`;
                 
-                // Çiçek Rengi (Sıcak tonlar ve kasımpatı renkleri)
-                const hues = [340, 300, 45, 10, 280]; // Pembe, Mor, Sarı, Kırmızı
+                const hues = [340, 300, 45, 10, 280]; 
                 const selectedHue = hues[Math.floor(Math.random() * hues.length)];
                 this.colorBase = { h: selectedHue, s: 80, l: 60 };
                 this.petalCount = 300;
             }
 
             update() {
-                // Gecikme kontrolü
                 if (this.delay > 0) {
                     this.delay--;
                     return;
                 }
                 this.started = true;
 
-                // 1. Sap Büyümesi (Ease-out efekti ile yavaşlayan büyüme)
                 if (this.progress < 1) {
                     this.progress += (1 - this.progress) * 0.02 + 0.001; 
                     if(this.progress > 0.99) {
@@ -154,7 +162,6 @@
                     }
                 }
 
-                // 2. Çiçek Açması
                 if (this.isBlooming && this.bloomRadius < this.maxBloomRadius) {
                     this.bloomRadius += 0.5;
                 }
@@ -163,24 +170,16 @@
             draw() {
                 if (!this.started) return;
 
-                // --- SAP ÇİZİMİ (Bezier Eğrisi) ---
-                // Sapın o anki uç noktasını bulmak için lineer interpolasyon (lerp)
-                // Ancak eğri üzerinde ilerlemeliyiz.
-                
-                // Kontrol noktası: Sapların aşağıda toplu durmasını sağlar
-                // X: Merkezde sabit, Y: Biraz yukarıda
                 const cpX = this.rootX; 
-                const cpY = this.rootY - (height * 0.3); // Kavisin kırılma noktası
+                // Kavis noktası da mobilde biraz daha aşağıda olsun
+                const cpY = this.rootY - (height * (width < 600 ? 0.2 : 0.3));
 
-                // Quadratic Bezier formülü: B(t) = (1-t)^2*P0 + 2(1-t)t*P1 + t^2*P2
                 const t = this.progress;
                 const currentX = (1-t)*(1-t)*this.rootX + 2*(1-t)*t*cpX + t*t*this.targetX;
                 const currentY = (1-t)*(1-t)*this.rootY + 2*(1-t)*t*cpY + t*t*this.targetY;
 
                 ctx.beginPath();
                 ctx.moveTo(this.rootX, this.rootY);
-                // Büyüme efektini çizmek için o anki uca (currentX, currentY) çiziyoruz
-                // Kontrol noktasını da orana göre ayarlıyoruz ki çizgi yolundan sapmasın
                 const currentCpX = this.rootX + (cpX - this.rootX) * t;
                 const currentCpY = this.rootY + (cpY - this.rootY) * t;
                 
@@ -190,7 +189,6 @@
                 ctx.lineCap = "round";
                 ctx.stroke();
 
-                // --- ÇİÇEK ÇİZİMİ ---
                 if (this.bloomRadius > 1) {
                     ctx.save();
                     ctx.translate(currentX, currentY);
@@ -200,7 +198,6 @@
                         const r = (this.bloomRadius * Math.sqrt(i)) / Math.sqrt(this.petalCount);
                         const x = r * Math.cos(angle);
                         const y = r * Math.sin(angle);
-                        
                         const alpha = this.bloomRadius / this.maxBloomRadius;
                         
                         ctx.fillStyle = `hsla(${this.colorBase.h + (i%20)}, ${this.colorBase.s}%, ${this.colorBase.l}%, ${alpha})`;
@@ -213,58 +210,45 @@
             }
         }
 
-        // Buketi Oluşturma Fonksiyonu
         function createBouquet() {
-            const flowerCount = 40; // Buket dolgunluğu
+            // Mobilde biraz daha az çiçek olsun ki performans düşmesin ve çok sıkışık görünmesin
+            const isMobile = width < 600;
+            const flowerCount = isMobile ? 30 : 40; 
             
             for (let i = 0; i < flowerCount; i++) {
-                // Açı dağılımı: -130 (sol) ile -50 (sağ) arası
-                // Gaussian benzeri bir dağılım yapalım ki ortada daha yoğun olsun
-                const spread = 80; // Toplam açıklık derecesi
-                const baseAngle = -90; // Tam yukarı
+                const spread = isMobile ? 60 : 80; // Mobilde açı daha dar
+                const baseAngle = -90; 
                 
-                // Rastgele ama merkeze yakın yoğunlaşan açı
                 let randomAngleOffset = (Math.random() - 0.5) * spread;
                 const angle = baseAngle + randomAngleOffset;
 
-                // Uzunluk ölçeği (0 ile 1 arası)
-                // Kenardakiler biraz daha kısa, ortadakiler uzun olsun
                 const centerDist = Math.abs(randomAngleOffset) / (spread/2);
                 const lengthScale = 0.6 + Math.random() * 0.4 + (1 - centerDist) * 0.3;
 
-                // Gecikme: Dıştakiler önce, içtekiler sonra veya tam tersi... 
-                // Rastgele yapalım, daha organik dursun.
                 const delay = Math.random() * 100;
 
                 stems.push(new BouquetStem(angle, lengthScale, delay));
             }
         }
 
-        // Animasyon Döngüsü
         function animate() {
-            // Arka planı hafifçe temizle (Motion blur efekti yok, net görüntü)
             ctx.clearRect(0, 0, width, height);
 
-            // Buket Saplarını Çiz
             stems.forEach(stem => {
                 stem.update();
                 stem.draw();
             });
 
-            // Buketin en altına bir "bağ" görüntüsü ekleyelim (Opsiyonel)
             drawRibbon();
-
             requestAnimationFrame(animate);
         }
 
         function drawRibbon() {
             ctx.save();
-            ctx.fillStyle = "rgba(255, 105, 180, 0.8)"; // Hot pink ribbon
+            ctx.fillStyle = "rgba(255, 105, 180, 0.8)"; 
             ctx.beginPath();
-            // Basit bir yay
             ctx.arc(width/2, height - 20, 15, 0, Math.PI*2);
             ctx.fill();
-            // Fiyonk
             ctx.beginPath();
             ctx.ellipse(width/2 - 15, height - 20, 20, 10, -0.2, 0, Math.PI*2);
             ctx.ellipse(width/2 + 15, height - 20, 20, 10, 0.2, 0, Math.PI*2);
@@ -275,7 +259,6 @@
         createBouquet();
         animate();
 
-        // Tıklayınca yeniden başlasın (belki kız arkadaşın tekrar izlemek ister)
         window.addEventListener('click', () => {
             stems = [];
             createBouquet();
